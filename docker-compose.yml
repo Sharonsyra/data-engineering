@@ -5,6 +5,8 @@ services:
     image: postgres
     volumes:
       - ./example_schema.sql:/docker-entrypoint-initdb.d/example_schema.sql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
     environment:
       - POSTGRES_DB=codetest
       - POSTGRES_USER=codetest
