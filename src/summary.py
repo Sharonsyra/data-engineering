@@ -1,38 +1,82 @@
 #!/usr/bin/env python
 
 import json
+from abc import abstractmethod, ABC
+
 import pandas as pd
+from pandas import DataFrame
 from sqlalchemy import create_engine
 
-engine = create_engine('postgresql://codetest:password@database/codetest')
 
-people = pd.read_sql('SELECT * FROM people', engine)
+def query_data():
+    engine = create_engine('postgresql://codetest:password@database/codetest')
+    places = pd.read_sql('SELECT * FROM places', engine)
+    people = pd.read_sql('SELECT * FROM people', engine)
+    return people, places
 
 
-size_by_place_of_birth = people.groupby('place_of_birth').size().to_dict()
+class Summary(ABC):
+    def __init__(self, places, people):
+        self.places = places
+        self.people = people
 
-with open('/data/people_size_by_pob.json', 'w') as f:
-    json.dump(size_by_place_of_birth, f)
+    def process(self):
+        results = self.query()
+        self.output(results)
 
-first_by_place_of_birth = people.groupby('place_of_birth').first().to_dict()
+    @abstractmethod
+    def query(self) -> DataFrame:
+        pass
 
-with open('/data/first_by_place_of_birth.json', 'w') as f:
-    json.dump(first_by_place_of_birth, f)
+    @property
+    @abstractmethod
+    def output_file(self):
+        pass
 
-places = pd.read_sql('SELECT * FROM places', engine)
+    def output(self, results: DataFrame):
+        results.to_dict()
 
-places_size_per_country = places.groupby('country').size().to_dict()
+    def load_data(self, results: DataFrame):
+        with open(f'/data/{self.output_file}', 'w') as f:
+            json.dump(results, f)
 
-with open('/data/places_size_per_country.json', 'w') as f:
-    json.dump(places_size_per_country, f)
 
-first_per_country = places.groupby('country').first().to_dict()
+class PeopleCountByPlaceOfBirth(Summary):
+    output_file = "people_size_by_pob.json"
 
-with open('/data/first_per_country.json', 'w') as f:
-    json.dump(first_per_country, f)
+    def query(self):
+        return people.groupby('place_of_birth').size()
 
-places_grouped = people.groupby('place_of_birth').size()
-places_with_more_than_100_people = places_grouped[places_grouped > 100].to_dict()
 
-with open('/data/places_with_more_than_100_people.json', 'w') as f:
-    json.dump(places_with_more_than_100_people, f)
+class FirstPersonByPlaceOfBirth(Summary):
+    output_file = "first_by_place_of_birth.json"
+
+    def query(self):
+        return people.groupby('place_of_birth').first()
+
+
+class PlacesCountByCountry(Summary):
+    output_file = "places_size_per_country.json"
+
+    def query(self):
+        return places.groupby('country').size()
+
+
+class FirstPlaceByCountry(Summary):
+    output_file = "first_per_country.json"
+
+    def query(self):
+        return places.groupby('country').first()
+
+
+summaries = [
+    PeopleCountByPlaceOfBirth,
+    FirstPersonByPlaceOfBirth,
+    PlacesCountByCountry,
+    FirstPlaceByCountry,
+]
+
+if __name__ == '__main__':
+    people, places = query_data()
+    for summary in summaries:
+        summary(people, places).process()
