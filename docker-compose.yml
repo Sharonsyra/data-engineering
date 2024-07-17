@@ -17,9 +17,55 @@ services:
     ports:
       - 5432:5432
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json # preconfigured servers/connections
+      - ./pgpass:/pgpass # passwords for the connections in this file
+    depends_on:
+      database:
+        condition: service_healthy
+
+  data_loader:
+    image: data_loader
+    build:
+      context: ./src
+      dockerfile: Dockerfile.source
+    command: [ "./ingestion.py" ]
+    volumes:
+      - ./data:/data
+    depends_on:
+      database:
+        condition: service_healthy
+
+  data_summary:
+    build:
+      context: ./src
+      dockerfile: Dockerfile.summary
+    command: [ "./summary.py" ]
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./data:/data
+
+
   app:
     image: app
     build: src
     command: ["./main.py"]
     volumes:
       - ./data:/data
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+    pgadmin:

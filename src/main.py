@@ -3,12 +3,14 @@
 import csv
 import json
 import sqlalchemy
+from sqlalchemy import MetaData
 
 # connect to the database
 engine = sqlalchemy.create_engine("postgresql://codetest:password@database/codetest")
 connection = engine.connect()
 
-metadata = sqlalchemy.schema.MetaData(engine)
+metadata = MetaData()
+metadata.reflect(bind=engine)
 
 # make an ORM object to refer to the table
 Example = sqlalchemy.schema.Table('examples', metadata, autoload=True, autoload_with=engine)
