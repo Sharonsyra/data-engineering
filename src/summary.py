@@ -34,11 +34,9 @@ class Summary(ABC):
         pass
 
     def output(self, results: DataFrame):
-        results.to_dict()
-
-    def load_data(self, results: DataFrame):
+        # results.to_dict()
         with open(f'/data/{self.output_file}', 'w') as f:
-            json.dump(results, f)
+            json.dump(results.to_dict(), f)
 
 
 class PeopleCountByPlaceOfBirth(Summary):
@@ -69,11 +67,20 @@ class FirstPlaceByCountry(Summary):
         return places.groupby('country').first()
 
 
+class PlacesWithMoreThan100People(Summary):
+    output_file = "places_with_more_than_100_people.json"
+
+    def query(self):
+        places_grouped = people.groupby('place_of_birth').size()
+        return places_grouped[places_grouped > 100]
+
+
 summaries = [
     PeopleCountByPlaceOfBirth,
     FirstPersonByPlaceOfBirth,
     PlacesCountByCountry,
     FirstPlaceByCountry,
+    PlacesWithMoreThan100People
 ]
 
 if __name__ == '__main__':
