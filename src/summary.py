@@ -43,35 +43,35 @@ class PeopleCountByPlaceOfBirth(Summary):
     output_file = "people_size_by_pob.json"
 
     def query(self):
-        return people.groupby('place_of_birth').size()
+        return self.people.groupby('place_of_birth').size()
 
 
 class FirstPersonByPlaceOfBirth(Summary):
     output_file = "first_by_place_of_birth.json"
 
     def query(self):
-        return people.groupby('place_of_birth').first()
+        return self.people.groupby('place_of_birth').first()
 
 
 class PlacesCountByCountry(Summary):
     output_file = "places_size_per_country.json"
 
     def query(self):
-        return places.groupby('country').size()
+        return self.places.groupby('country').size()
 
 
 class FirstPlaceByCountry(Summary):
     output_file = "first_per_country.json"
 
     def query(self):
-        return places.groupby('country').first()
+        return self.places.groupby('country').first()
 
 
 class PlacesWithMoreThan100People(Summary):
     output_file = "places_with_more_than_100_people.json"
 
     def query(self):
-        places_grouped = people.groupby('place_of_birth').size()
+        places_grouped = self.people.groupby('place_of_birth').size()
         return places_grouped[places_grouped > 100]
 
 
@@ -84,6 +84,6 @@ summaries = [
 ]
 
 if __name__ == '__main__':
-    people, places = query_data()
+    _people, _places = query_data()
     for summary in summaries:
-        summary(people, places).process()
+        summary(_people, _places).process()
